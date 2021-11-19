@@ -1,0 +1,139 @@
+```
+'''!pip install wordcloud
+!pip install fileupload
+!pip install ipywidgets
+!jupyter nbextension install --py --user fileupload
+!jupyter nbextension enable --py fileupload
+'''
+```
+import wordcloud
+import re
+import numpy as np
+from matplotlib import pyplot as plt
+from IPython.display import display
+import fileupload
+from nltk import word_tokenize
+import nltk
+nltk.download()
+from nltk.corpus import stopwords
+from nltk import word_tokenize
+import itertools
+import seaborn as sns
+from nltk.stem import WordNetLemmatizer
+
+##open the text document T1
+f1 = open('Documents/Crime&Punishment.txt','r',encoding='utf-8')
+##reading the text document T1
+T1=f1.read()
+##tokenizing(converting the words and characters in the form of list) the text document to remove /n /r and chapter number and names
+T1_tokens = word_tokenize(T1) 
+##Preprocessing step for converting all the tokens in lowercase
+T1_tokens = [i.lower() for i in T1_tokens]
+##Preprocessing step - Lemmitization 
+lemmatizer = WordNetLemmatizer()
+T1_tokens=[lemmatizer.lemmatize(i) for i in T1_tokens]
+
+##rcode snipet for removal of punctuation marks
+T1_useful = []
+for i in T1_tokens:
+    if re.search("[a-zA-Z]+", i) != None:
+        T1_useful.append(i)
+        
+##Plotting top 40 most frequent words 
+def plot_freq(result):
+    plt.bar(range(len(result.keys())), list(result.values()), align='center',width=0.3)
+    plt.xticks(range(len(result)), list(result.keys()),rotation='vertical')
+    plt.figure(figsize=(100,100))
+    plt.show()
+    
+##Generates frequenry distribution of every word in the list of tokens/corpus and generates its corresponding word cloud
+
+def calculate_frequencies(tokens):
+    # Here is a list of punctuations and uninteresting words you can use to process your text
+    #punctuations = '''!()-[]{};:'"\,<>./?@#$%^&*_~'''
+    
+    
+    T1_freq = {}
+    for word in T1_tokens:
+        if word not in T1_freq.keys():
+            T1_freq[word]=1
+        else:
+            T1_freq[word]+=1
+    
+    
+    sorted_freq={k: v for k, v in sorted(T1_freq.items(), key=lambda item: item[1],reverse=True)}
+    sorted_freq=dict(itertools.islice(sorted_freq.items(), 40))
+    plot_freq(sorted_freq)
+    
+
+    
+    #wordcloud
+    cloud = wordcloud.WordCloud()
+    cloud.generate_from_frequencies(T1_freq)
+    return cloud.to_array()
+    
+#plotting the word cloud with stop words
+myimage1 = calculate_frequencies(T1_useful)
+plt.figure(figsize = (20,20))
+plt.imshow(myimage1, interpolation = 'nearest')
+plt.axis('off')
+plt.show()
+
+#Generates frequenry distribution of every word (excluding stop words) in the list of tokens/corpus and generates its corresponding word cloud 
+
+def calculate_freq_without_stop_words(tokens):
+    
+    punctuations = '''!()-[]{};:'"\,<>./?@#$%^&*_~'''
+    stop_words = stopwords.words("english")
+    
+    
+    T1_wfreq = {}
+    for words in T1_tokens:
+        if words in stop_words or words in punctuations:
+            pass
+        else:
+            if words not in T1_wfreq.keys():
+                T1_wfreq[words]=0
+            else:
+                T1_wfreq[words]+=1
+   
+    sorted_wfreq={k: v for k, v in sorted(T1_wfreq.items(), key=lambda item: item[1],reverse=True)}
+    sorted_wfreq=dict(itertools.islice(sorted_wfreq.items(), 40))
+    plot_freq(sorted_wfreq)
+    
+
+    
+    #wordcloud
+    clouds = wordcloud.WordCloud(background_color='black')
+    clouds.generate_from_frequencies(res)
+    return clouds.to_array()
+    
+#plotting the word cloud without stop words
+myimage2 = calculate_freq_without_stop_words(T1_useful)
+plt.figure(figsize = (20,20))
+plt.imshow(myimage2, interpolation = 'nearest')
+plt.axis('off')
+plt.show()
+
+#frequency distribution of words with respect to their word length
+T1_counts={}
+for wor in T1_useful:
+    if len(wor) not in T1_counts:
+        T1_counts[len(wor)] = 1
+    else:
+        T1_counts[len(wor)]+=1
+
+T1_counts = dict(sorted(T1_counts.items(), key=lambda x:x[0])) #Converts to a list of tuples and sorts
+
+#Used Genrators for the implementation of "lazy" to avoid memory overload
+def TaggerGen():
+    for i in T1_useful:
+        T1_postag = nltk.pos_tag(i.split())
+        yield T1_postag
+tg = TaggerGen()
+filer = open("war&peace_tagged.txt", "a")
+for i in range(len(T1_useful)):
+    out1,out2 = next(tg)[0]
+    r = out1+" "+out2+"\n"
+    filer.write(r)
+filer.close()
